@@ -1,14 +1,12 @@
 import React, { useEffect } from 'react';
 import { getNumbers } from '../../utils';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const items = getNumbers(1, 42).map(n => `Item ${n}`);
-
 type Props = {
   total: number;
   perPage: number;
   currentPage: number;
   onChange: (page: number) => void;
+  onPerPageChange: (perPage: number) => void;
 };
 
 export const Pagination: React.FC<Props> = ({
@@ -16,30 +14,47 @@ export const Pagination: React.FC<Props> = ({
   perPage,
   currentPage,
   onChange,
+  onPerPageChange,
 }) => {
   const pages = Math.ceil(total / perPage);
   const pageNumbers = getNumbers(1, pages);
 
-  // Обробка випадку, коли currentPage виходить за межі
+  // Якщо currentPage вийшов за межі
   useEffect(() => {
     if (currentPage > pages && pages > 0) {
       onChange(pages);
     }
   }, [currentPage, pages, onChange]);
 
-  if (pages <= 1) {
-    return null;
-  }
+  if (pages <= 1) return null;
 
-  const handlePageChange = (newPage: number) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (newPage >= 1 && newPage <= pages) {
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pages && newPage !== currentPage) {
       onChange(newPage);
     }
   };
 
   return (
-    <>
+    <div className="pagination-wrapper">
+      {/* Пагінаційна інформація */}
+      <p data-cy="info">
+        Page {currentPage} (items {(currentPage - 1) * perPage + 1} -{' '}
+        {Math.min(currentPage * perPage, total)} of {total})
+      </p>
+
+      {/* Селектор perPage */}
+      <select
+        data-cy="perPageSelector"
+        value={perPage}
+        onChange={e => onPerPageChange(+e.target.value)}
+      >
+        <option value={3}>3</option>
+        <option value={5}>5</option>
+        <option value={10}>10</option>
+        <option value={20}>20</option>
+      </select>
+
+      {/* Кнопки пагінації */}
       <ul className="pagination">
         <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
           <a
@@ -47,7 +62,10 @@ export const Pagination: React.FC<Props> = ({
             className="page-link"
             href="#prev"
             aria-disabled={currentPage === 1}
-            onClick={handlePageChange(currentPage - 1)}
+            onClick={e => {
+              e.preventDefault();
+              handlePageChange(currentPage - 1);
+            }}
           >
             «
           </a>
@@ -62,7 +80,10 @@ export const Pagination: React.FC<Props> = ({
               data-cy="pageLink"
               className="page-link"
               href={`#${page}`}
-              onClick={handlePageChange(page)}
+              onClick={e => {
+                e.preventDefault();
+                handlePageChange(page);
+              }}
             >
               {page}
             </a>
@@ -75,22 +96,15 @@ export const Pagination: React.FC<Props> = ({
             className="page-link"
             href="#next"
             aria-disabled={currentPage === pages}
-            onClick={handlePageChange(currentPage + 1)}
+            onClick={e => {
+              e.preventDefault();
+              handlePageChange(currentPage + 1);
+            }}
           >
             »
           </a>
         </li>
       </ul>
-
-      <ul>
-        {items
-          .slice((currentPage - 1) * perPage, currentPage * perPage)
-          .map((item, index) => (
-            <li key={index} data-cy="item">
-              {item}
-            </li>
-          ))}
-      </ul>
-    </>
+    </div>
   );
 };
